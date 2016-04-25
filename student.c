@@ -19,8 +19,8 @@
 
 /* Typ/ID rendereru (nemenit) */
 const int           STUDENT_RENDERER = 1;
-
-
+/* number of milliseconds from initialization, incremented onTime() */
+double timer = 0;
 /*****************************************************************************
  * Funkce vytvori vas renderer a nainicializuje jej
  */
@@ -335,7 +335,7 @@ void renderStudentScene(S_Renderer *pRenderer, S_Model *pModel)
   renMatSpecular(pRenderer, &MAT_RED_SPECULAR);
 
   /* a vykreslime nas model (ve vychozim stavu kreslime pouze snimek 0) */
-  renderModel(pRenderer, pModel, 0);
+  renderModel(pRenderer, pModel, timer);
 }
 
 /* Callback funkce volana pri tiknuti casovace
@@ -345,6 +345,7 @@ void onTimer( int ticks )
     /* uprava parametru pouzivaneho pro vyber klicoveho snimku
      * a pro interpolaci mezi snimky */
     /* ??? */
+    timer += 0.33;
 }
 
 /*****************************************************************************
