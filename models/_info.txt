@@ -1,0 +1,22 @@
+modely s texturami
+  marvin.tri (marvin.bmp)
+  plane.tri (plane.bmp)
+  ogro.tri (ogro.bmp)
+  yoshi.tri (yoshi.bmp)
+  doomguy.tri (doomguy.bmp)
+
+animovane modely
+  marvin.tri
+  ogro.tri
+  yoshi.tri
+  doomguy.tri
+
+staticke modely
+  valec.tri
+  skull.tri
+  plane.tri
+  koule.tri
+  bunny.tri
+
+
+Animovane modely pro projekt byly pripraveny s vyuzitim archivu Polycount exportem vybranych modelu a animaci z puvodniho .md2 formatu (id Tech 2 engine model format) do .tri formatu.

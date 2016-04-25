@@ -1,0 +1,17 @@
+Narazite-li na problem s prekladem projektu pod VS2015 kvuli pouzite SDL (unresolved external symbol __imp____iob_func referenced in ...), nejrychlejsi zpusob reseni je uprava souboru main.c:
+
+FILE __iob_func[ 3 ]; // doplnte deklaraci __iob_func
+
+// ...
+
+int main( int argc, char *argv[] )
+{
+    // nastavte hodnoty __iob_func
+    __iob_func[ 0 ] = *stdin;
+    __iob_func[ 1 ] = *stdout;
+    __iob_func[ 2 ] = *stderr;
+
+// ...
+
+
+Soubor main.c vsak neodevzdavejte, jde pouze o ad-hoc reseni problemu prekladu pod VS2015.
