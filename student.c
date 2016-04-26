@@ -226,6 +226,12 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
   int         vertexOffset, normalOffset; /* offset pro vrcholy a normalove vektory trojuhelniku */
   int         i0, i1, i2, in;             /* indexy vrcholu a normaly pro i-ty trojuhelnik n-teho snimku */
 
+  int         nextVertexOffset, nextNormalOffset; //offsety nasledujuceho snimku
+  int         next_i0, next_i1, inext_2, next_in; //indexy nasledujuceho snimku
+  S_Coords    next_aa, next_bb, next_cc;
+  S_Coords    next_naa, next_nbb, next_ncc;
+  S_Coords    next_nn;
+
   IZG_ASSERT(pRenderer && pModel && i >= 0 && i < trivecSize(pModel->triangles) && n >= 0 );
 
   /* z modelu si vytahneme i-ty trojuhelnik */
@@ -233,22 +239,41 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
 
   /* ziskame offset pro vrcholy n-teho snimku */
   vertexOffset = (((int) n) % pModel->frames) * pModel->verticesPerFrame;
+  // offset nasledujuceho
+  nextVertexOffset = (((int) n + 1) % pModel->frames) * pModel->verticesPerFrame;
 
   /* ziskame offset pro normaly trojuhelniku n-teho snimku */
   normalOffset = (((int) n) % pModel->frames) * pModel->triangles->size;
+  //offset normaly asledujuceho
+  nextNormalOffset = (((int) n + 1) % pModel->frames) * pModel->triangles->size;
 
   /* indexy vrcholu pro i-ty trojuhelnik n-teho snimku - pricteni offsetu */
   i0 = triangle->v[ 0 ] + vertexOffset;
   i1 = triangle->v[ 1 ] + vertexOffset;
   i2 = triangle->v[ 2 ] + vertexOffset;
 
+  // indexy nasledujucich
+  next_i0 = triangle->v[ 0 ] + nextVertexOffset;
+  next_i1 = triangle->v[ 1 ] + nextVertexOffset;
+  next_i2 = triangle->v[ 2 ] + nextVertexOffset;
   /* index normaloveho vektoru pro i-ty trojuhelnik n-teho snimku - pricteni offsetu */
   in = triangle->n + normalOffset;
+  next_in = triangle->n + nextNormalOffset;
 
   /* transformace vrcholu matici model */
   trTransformVertex(&aa, cvecGetPtr(pModel->vertices, i0));
   trTransformVertex(&bb, cvecGetPtr(pModel->vertices, i1));
   trTransformVertex(&cc, cvecGetPtr(pModel->vertices, i2));
+
+  /* transformace vrcholu  nasledujiciho matici model */
+  trTransformVertex(&next_aa, cvecGetPtr(pModel->vertices, next_i0));
+  trTransformVertex(&next_bb, cvecGetPtr(pModel->vertices, next_i1));
+  trTransformVertex(&next_cc, cvecGetPtr(pModel->vertices, next_i2));
+
+  /* promitneme vrcholy trojuhelniku na obrazovku */
+  trProjectVertex(&u1, &v1, &aa);
+  trProjectVertex(&u2, &v2, &bb);
+  trProjectVertex(&u3, &v3, &cc);
 
   /* promitneme vrcholy trojuhelniku na obrazovku */
   trProjectVertex(&u1, &v1, &aa);
