@@ -19,6 +19,8 @@
 
 /* Typ/ID rendereru (nemenit) */
 const int           STUDENT_RENDERER = 1;
+//biely material
+
 /* number of milliseconds from initialization, incremented onTime() */
 double timer = 0;
 /*****************************************************************************
@@ -79,15 +81,16 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
                          S_Coords *n1, S_Coords *n2, S_Coords *n3,
                          int x1, int y1,
                          int x2, int y2,
-                         int x3, int y3
+                         int x3, int y3,
+                         S_Coords *t
                          )
 {
   int         minx, miny, maxx, maxy;
   int         a1, a2, a3, b1, b2, b3, c1, c2, c3;
   int         s1, s2, s3;
   int         x, y, e1, e2, e3;
-  double      alpha, beta, gamma, w1, w2, w3, z;
-  S_RGBA      col1, col2, col3, color;
+  double      alpha, beta, gamma, w1, w2, w3, z, text_x, text_y;//textury
+  S_RGBA      col1, col2, col3, color, text_color;
 
   IZG_ASSERT(pRenderer && v1 && v2 && v3 && n1 && n2 && n3);
 
@@ -181,12 +184,20 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
 
               /* interpolace z-souradnice */
               z = w1 * v1->z + w2 * v2->z + w3 * v3->z;
+              //krok 4
+              text_x = w1 * t[0].x + w2 * t[1].x + w3 * t[2].x;
+              text_y = w1 * t[0].y + w2 * t[1].y + w3 * t[2].y;
+              text_color = studrenTextureValue((S_StudentRenderer *)pRenderer, text_x, text_y);
 
               /* interpolace barvy */
               color.red = ROUND2BYTE(w1 * col1.red + w2 * col2.red + w3 * col3.red);
               color.green = ROUND2BYTE(w1 * col1.green + w2 * col2.green + w3 * col3.green);
               color.blue = ROUND2BYTE(w1 * col1.blue + w2 * col2.blue + w3 * col3.blue);
               color.alpha = 255;
+              // modulacia farby textury a farby z osvetlovacieho modelu
+              color.red = color.red * text_color.red/255;
+              color.green = color.green * text_color.green/255;
+              color.blue = color.blue * text_color.blue/255;
 
               /* vykresleni bodu */
               if( z < DEPTH(pRenderer, x, y) )
@@ -350,7 +361,8 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
   studrenDrawTriangle(pRenderer,
                   &aa, &bb, &cc,
                   &naa, &nbb, &ncc,
-                  u1, v1, u2, v2, u3, v3
+                  u1, v1, u2, v2, u3, v3,
+                  triangle->t
                   );
 }
 
@@ -377,7 +389,11 @@ S_RGBA studrenTextureValue( S_StudentRenderer * pRenderer, double u, double v )
  */
 
 void renderStudentScene(S_Renderer *pRenderer, S_Model *pModel)
-{
+{ //pridanie materialu, material je pridany tu pretoze inde sa odmieta skompilovat
+  const S_Material MAT_WHITE_AMBIENT = {1.0, 1.0, 1.0, 1.0};
+  const S_Material MAT_WHITE_DIFFUSE = {1.0, 1.0, 1.0, 1.0};
+  const S_Material MAT_WHITE_SPECULAR = {1.0, 1.0, 1.0, 1.0};
+
   /* test existence frame bufferu a modelu */
   IZG_ASSERT(pModel && pRenderer);
 
@@ -398,9 +414,9 @@ void renderStudentScene(S_Renderer *pRenderer, S_Model *pModel)
   trRotateY(pRenderer->scene_rot_y);
 
   /* nastavime material */
-  renMatAmbient(pRenderer, &MAT_RED_AMBIENT);
-  renMatDiffuse(pRenderer, &MAT_RED_DIFFUSE);
-  renMatSpecular(pRenderer, &MAT_RED_SPECULAR);
+  renMatAmbient(pRenderer, &MAT_WHITE_AMBIENT);
+  renMatDiffuse(pRenderer, &MAT_WHITE_DIFFUSE);
+  renMatSpecular(pRenderer, &MAT_WHITE_SPECULAR);
 
   /* a vykreslime nas model (ve vychozim stavu kreslime pouze snimek 0) */
   renderModel(pRenderer, pModel, timer);
