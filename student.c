@@ -226,11 +226,10 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
   int         vertexOffset, normalOffset; /* offset pro vrcholy a normalove vektory trojuhelniku */
   int         i0, i1, i2, in;             /* indexy vrcholu a normaly pro i-ty trojuhelnik n-teho snimku */
 
+  S_Coords    a, b, c, n_a, n_b, n_c; /* suradnice vrcholov pre interpolaciu */
   int         nextVertexOffset, nextNormalOffset; //offsety nasledujuceho snimku
-  int         next_i0, next_i1, inext_2, next_in; //indexy nasledujuceho snimku
-  S_Coords    next_aa, next_bb, next_cc;
-  S_Coords    next_naa, next_nbb, next_ncc;
-  S_Coords    next_nn;
+  int         next_i0, next_i1, next_i2, next_in; //indexy nasledujuceho snimku
+  S_Coords    next_nn, temp_nn;
 
   IZG_ASSERT(pRenderer && pModel && i >= 0 && i < trivecSize(pModel->triangles) && n >= 0 );
 
@@ -256,42 +255,86 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
   next_i0 = triangle->v[ 0 ] + nextVertexOffset;
   next_i1 = triangle->v[ 1 ] + nextVertexOffset;
   next_i2 = triangle->v[ 2 ] + nextVertexOffset;
+
   /* index normaloveho vektoru pro i-ty trojuhelnik n-teho snimku - pricteni offsetu */
   in = triangle->n + normalOffset;
   next_in = triangle->n + nextNormalOffset;
 
+  // suradnice sucasneho trojuholnika
+  a = *cvecGetPtr(pModel->vertices, i0);
+  b = *cvecGetPtr(pModel->vertices, i1);
+  c = *cvecGetPtr(pModel->vertices, i2);
+  // suradnice nasledujuceho
+  n_a = *cvecGetPtr(pModel->vertices, next_i0);
+  n_b = *cvecGetPtr(pModel->vertices, next_i1);
+  n_c = *cvecGetPtr(pModel->vertices, next_i2);
+
+  // desatinna cast
+  n = n - (int)n;
+  // interpolace
+  a.x = a.x * (1.0 - n) + n_a.x * n;
+  a.y = a.y * (1.0 - n) + n_a.y * n;
+  a.z = a.z * (1.0 - n) + n_a.z * n;
+
+  b.x = b.x * (1.0 - n) + n_b.x * n;
+  b.y = b.y * (1.0 - n) + n_b.y * n;
+  b.z = b.z * (1.0 - n) + n_b.z * n;
+
+  c.x = c.x * (1.0 - n) + n_c.x * n;
+  c.y = c.y * (1.0 - n) + n_c.y * n;
+  c.z = c.z * (1.0 - n) + n_c.z * n;
+
   /* transformace vrcholu matici model */
-  trTransformVertex(&aa, cvecGetPtr(pModel->vertices, i0));
-  trTransformVertex(&bb, cvecGetPtr(pModel->vertices, i1));
-  trTransformVertex(&cc, cvecGetPtr(pModel->vertices, i2));
-
-  /* transformace vrcholu  nasledujiciho matici model */
-  trTransformVertex(&next_aa, cvecGetPtr(pModel->vertices, next_i0));
-  trTransformVertex(&next_bb, cvecGetPtr(pModel->vertices, next_i1));
-  trTransformVertex(&next_cc, cvecGetPtr(pModel->vertices, next_i2));
+  trTransformVertex(&aa, &a);
+  trTransformVertex(&bb, &b);
+  trTransformVertex(&cc, &c);
 
   /* promitneme vrcholy trojuhelniku na obrazovku */
   trProjectVertex(&u1, &v1, &aa);
   trProjectVertex(&u2, &v2, &bb);
   trProjectVertex(&u3, &v3, &cc);
 
-  /* promitneme vrcholy trojuhelniku na obrazovku */
-  trProjectVertex(&u1, &v1, &aa);
-  trProjectVertex(&u2, &v2, &bb);
-  trProjectVertex(&u3, &v3, &cc);
+  // suradnice sucasneho trojuholnika pre osvetlovaci model
+  a = *cvecGetPtr(pModel->normals, i0);
+  b = *cvecGetPtr(pModel->normals, i1);
+  c = *cvecGetPtr(pModel->normals, i2);
+  // suradnice nasledujuceho trojuholnika pre osvetlovaci model
+  n_a = *cvecGetPtr(pModel->normals, next_i0);
+  n_b = *cvecGetPtr(pModel->normals, next_i1);
+  n_c = *cvecGetPtr(pModel->normals, next_i2);
+
+  // interpolacia
+  a.x = a.x * (1.0 - n) + n_a.x * n;
+  a.y = a.y * (1.0 - n) + n_a.y * n;
+  a.z = a.z * (1.0 - n) + n_a.z * n;
+
+  b.x = b.x * (1.0 - n) + n_b.x * n;
+  b.y = b.y * (1.0 - n) + n_b.y * n;
+  b.z = b.z * (1.0 - n) + n_b.z * n;
+
+  c.x = c.x * (1.0 - n) + n_c.x * n;
+  c.y = c.y * (1.0 - n) + n_c.y * n;
+  c.z = c.z * (1.0 - n) + n_c.z * n;
 
   /* pro osvetlovaci model transformujeme take normaly ve vrcholech */
-  trTransformVector(&naa, cvecGetPtr(pModel->normals, i0));
-  trTransformVector(&nbb, cvecGetPtr(pModel->normals, i1));
-  trTransformVector(&ncc, cvecGetPtr(pModel->normals, i2));
+  trTransformVector(&naa, &a);
+  trTransformVector(&nbb, &b);
+  trTransformVector(&ncc, &c);
 
   /* normalizace normal */
   coordsNormalize(&naa);
   coordsNormalize(&nbb);
   coordsNormalize(&ncc);
 
+  /* interpolace normaly */
+ temp_nn = *cvecGetPtr(pModel->trinormals, in);
+ next_nn = *cvecGetPtr(pModel->trinormals, next_in);
+ nn.x = nn.x * (1.0 - n) + next_nn.x * n;
+ nn.y = nn.y * (1.0 - n) + next_nn.y * n;
+ nn.z = nn.z * (1.0 - n) + next_nn.z * n;
+
   /* transformace normaly trojuhelniku matici model */
-  trTransformVector(&nn, cvecGetPtr(pModel->trinormals, in));
+  trTransformVector(&nn, &temp_nn);
 
   /* normalizace normaly */
   coordsNormalize(&nn);
@@ -369,7 +412,6 @@ void onTimer( int ticks )
 {
     /* uprava parametru pouzivaneho pro vyber klicoveho snimku
      * a pro interpolaci mezi snimky */
-    /* ??? */
     timer += 0.33;
 }
 
