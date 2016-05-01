@@ -43,7 +43,11 @@ typedef struct S_StudentRenderer
     S_Renderer  base;
 
     /* Zde uz muzete doplnovat svuj kod dle libosti */
-    /* ??? */
+
+    //pridanie poloziek pre krok 5 - vlastna reprezentacia struktury vyska a sirka
+    S_RGBA *texture;
+    int width;
+    int height;
 
 } S_StudentRenderer;
 
@@ -70,7 +74,8 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
                          int x1, int y1,
                          int x2, int y2,
                          int x3, int y3,
-                         S_Coords *t
+                         S_Coords *t,
+                         double h1, double h2, double h3
                          );
 
 /* Vykresli i-ty trojuhelnik n-teho klicoveho snimku modelu

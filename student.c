@@ -42,7 +42,8 @@ S_Renderer * studrenCreate()
 
     /* inicializace nove pridanych casti */
     renderer->base.projectTriangleFunc = studrenProjectTriangle;
-
+    //nacitanie textury
+    renderer->texture = loadBitmap(TEXTURE_FILENAME, &(renderer->width), &(renderer->height));
     return (S_Renderer *)renderer;
 }
 
@@ -60,7 +61,7 @@ void studrenRelease(S_Renderer **ppRenderer)
         renderer = (S_StudentRenderer *)(*ppRenderer);
 
         /* pripadne uvolneni pameti */
-        /* ??? */
+        free(renderer->texture);
 
         /* fce default rendereru */
         renRelease(ppRenderer);
@@ -82,7 +83,8 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
                          int x1, int y1,
                          int x2, int y2,
                          int x3, int y3,
-                         S_Coords *t
+                         S_Coords *t,
+                         double h1, double h2, double h3
                          )
 {
   int         minx, miny, maxx, maxy;
@@ -185,8 +187,13 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
               /* interpolace z-souradnice */
               z = w1 * v1->z + w2 * v2->z + w3 * v3->z;
               //krok 4
-              text_x = w1 * t[0].x + w2 * t[1].x + w3 * t[2].x;
-              text_y = w1 * t[0].y + w2 * t[1].y + w3 * t[2].y;
+              //text_x = w1 * t[0].x + w2 * t[1].x + w3 * t[2].x;
+              //text_y = w1 * t[0].y + w2 * t[1].y + w3 * t[2].y;
+              //krok 6
+              double d = (w1 / h1 + w2 / h2 + w3 / h3 );
+              text_x = ((w1 * t[0].x / h1) + (w2 * t[1].x / h2) + (w3 * t[2].x / h3)) /d;
+              text_y = ((w1 * t[0].y / h1) + (w2 * t[1].y / h2) + (w3 * t[2].y / h3)) /d;
+
               text_color = studrenTextureValue((S_StudentRenderer *)pRenderer, text_x, text_y);
 
               /* interpolace barvy */
@@ -195,9 +202,9 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
               color.blue = ROUND2BYTE(w1 * col1.blue + w2 * col2.blue + w3 * col3.blue);
               color.alpha = 255;
               // modulacia farby textury a farby z osvetlovacieho modelu
-              color.red = color.red * text_color.red/255;
-              color.green = color.green * text_color.green/255;
-              color.blue = color.blue * text_color.blue/255;
+              color.red = ROUND2BYTE(color.red * text_color.red/255);
+              color.green = ROUND2BYTE(color.green * text_color.green/255);
+              color.blue = ROUND2BYTE(color.blue * text_color.blue/255);
 
               /* vykresleni bodu */
               if( z < DEPTH(pRenderer, x, y) )
@@ -301,9 +308,9 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
   trTransformVertex(&cc, &c);
 
   /* promitneme vrcholy trojuhelniku na obrazovku */
-  trProjectVertex(&u1, &v1, &aa);
-  trProjectVertex(&u2, &v2, &bb);
-  trProjectVertex(&u3, &v3, &cc);
+  double h1 = trProjectVertex(&u1, &v1, &aa);
+  double h2 = trProjectVertex(&u2, &v2, &bb);
+  double h3  = trProjectVertex(&u3, &v3, &cc);
 
   // suradnice sucasneho trojuholnika pre osvetlovaci model
   a = *cvecGetPtr(pModel->normals, i0);
@@ -328,6 +335,7 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
   c.z = c.z * (1.0 - n) + n_c.z * n;
 
   /* pro osvetlovaci model transformujeme take normaly ve vrcholech */
+
   trTransformVector(&naa, &a);
   trTransformVector(&nbb, &b);
   trTransformVector(&ncc, &c);
@@ -362,7 +370,8 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
                   &aa, &bb, &cc,
                   &naa, &nbb, &ncc,
                   u1, v1, u2, v2, u3, v3,
-                  triangle->t
+                  triangle->t,
+                  h1, h2, h3
                   );
 }
 
@@ -376,9 +385,41 @@ void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float
 
 S_RGBA studrenTextureValue( S_StudentRenderer * pRenderer, double u, double v )
 {
-    /* ??? */
-    unsigned char c = ROUND2BYTE( ( ( fmod( u * 10.0, 1.0 ) > 0.5 ) ^ ( fmod( v * 10.0, 1.0 ) < 0.5 ) ) * 255 );
-    return makeColor( c, 255 - c, 0 );
+  int u1, u2, v1, v2;
+  unsigned char red, green, blue;
+
+  u = (pRenderer->width - 1) * u;
+  v = (pRenderer->height - 1) * v;
+
+  //suradnice_
+  u1 = (int) floor(u);
+  u2 = u1 + 1;
+  v1 = (int) floor(v);
+  v2 = v1 + 1;
+
+  //najdenie 4 nablizsich pixelov
+  S_RGBA p0, p1, p2, p3;
+  p0 = pRenderer->texture[u1 * pRenderer->height + v1];//q11
+  p1 = pRenderer->texture[(u1 + 1) * pRenderer->height + v1];//q21
+  p2 = pRenderer->texture[u1 * pRenderer->height + v2];//q12
+  p3 = pRenderer->texture[(u1 + 1) * pRenderer->height + v2];//q22
+  //vypocet
+  red =   p0.red*(u2 - u)*(v2 - v)
+        + p1.red*(u - u1)*(v2 - v)
+        + p2.red*(u2 - u)*(v - v1)
+        + p3.red*(u - u1)*(v - v1);
+
+  green = p0.green*(u2 - u)*(v2 - v)
+        + p1.green*(u - u1)*(v2 - v)
+        + p2.green*(u2 - u)*(v - v1)
+        + p3.green*(u - u1)*(v - v1);
+
+  blue =  p0.blue*(u2 - u)*(v2 - v)
+        + p1.blue*(u - u1)*(v2 - v)
+        + p2.blue*(u2 - u)*(v - v1)
+        + p3.blue*(u - u1)*(v - v1);
+
+  return makeColor(red, green, blue);
 }
 
 /******************************************************************************
