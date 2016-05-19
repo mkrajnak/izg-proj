@@ -25,6 +25,7 @@ extern "C" {
  * Studentsky renderer, do ktereho muzete dopisovat svuj kod
  */
 
+
 /* Typ/ID rendereru */
 extern const int STUDENT_RENDERER;
 
@@ -40,10 +41,14 @@ typedef struct S_StudentRenderer
      * na prvni prvek struktury a se strukturou S_StudentRenderer
      * tak pracovat jako s S_Renderer... */
     S_Renderer  base;
-    
+
     /* Zde uz muzete doplnovat svuj kod dle libosti */
-    /* ??? */
-    
+
+    //pridanie poloziek pre krok 5 - vlastna reprezentacia struktury vyska a sirka
+    S_RGBA *texture;
+    int width;
+    int height;
+
 } S_StudentRenderer;
 
 
@@ -68,7 +73,9 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
                          S_Coords *n1, S_Coords *n2, S_Coords *n3,
                          int x1, int y1,
                          int x2, int y2,
-                         int x3, int y3
+                         int x3, int y3,
+                         S_Coords *t,
+                         double h1, double h2, double h3
                          );
 
 /* Vykresli i-ty trojuhelnik n-teho klicoveho snimku modelu
@@ -79,7 +86,7 @@ void studrenDrawTriangle(S_Renderer *pRenderer,
  * (cela cast n udava klicovy snimek, desetinna cast n parametr interpolace
  * mezi snimkem n a n + 1)
  * i - index trojuhelniku
- * n - index klicoveho snimku (float pro pozdejsi interpolaci mezi snímky) */
+ * n - index klicoveho snimku (float pro pozdejsi interpolaci mezi snï¿½mky) */
 void studrenProjectTriangle(S_Renderer *pRenderer, S_Model *pModel, int i, float n);
 
 /* Vraci hodnotu v aktualne nastavene texture na zadanych
@@ -93,11 +100,11 @@ S_RGBA studrenTextureValue( S_StudentRenderer * pRenderer, double u, double v );
  * (volani renderModel s aktualizovanym parametrem n) */
 void renderStudentScene( S_Renderer *pRenderer, S_Model *pModel );
 
-/* Callback funkce volana pri tiknuti casovace 
+/* Callback funkce volana pri tiknuti casovace
  * ticks - pocet milisekund od inicializace */
 void onTimer( int ticks );
 
-/* Funkce pro vyrenderovani modelu slozeneho z trojuhelniku (viz main.c) 
+/* Funkce pro vyrenderovani modelu slozeneho z trojuhelniku (viz main.c)
  * n - index klicoveho snimku (float pro pozdejsi interpolaci mezi snimky) */
 void renderModel(S_Renderer *pRenderer, S_Model *pModel, float n);
 
